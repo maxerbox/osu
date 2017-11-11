@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Containers;
 using osu.Game.Rulesets.Mania.Judgements;
 using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Input.Bindings;
+using osu.Game.Rulesets.Mania.Communication;
 
 namespace osu.Game.Rulesets.Mania.Objects.Drawables
 {
@@ -25,6 +26,7 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
 
         private readonly GlowPiece glowPiece;
         private readonly BodyPiece bodyPiece;
+        private SocketCommunication socket;
         private readonly Container<DrawableHoldNoteTick> tickContainer;
         private readonly Container fullHeightContainer;
 
@@ -38,11 +40,12 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
         /// </summary>
         private bool hasBroken;
 
-        public DrawableHoldNote(HoldNote hitObject, ManiaAction action)
+        public DrawableHoldNote(HoldNote hitObject, ManiaAction action, SocketCommunication socket)
             : base(hitObject, action)
         {
             RelativeSizeAxes = Axes.Both;
             Height = (float)HitObject.Duration;
+            this.socket = socket;
 
             AddRange(new Drawable[]
             {
@@ -65,12 +68,12 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
                     RelativeChildOffset = new Vector2(0, (float)HitObject.StartTime),
                     RelativeChildSize = new Vector2(1, (float)HitObject.Duration)
                 },
-                head = new DrawableHeadNote(this, action)
+                head = new DrawableHeadNote(this, action, socket)
                 {
                     Anchor = Anchor.TopCentre,
                     Origin = Anchor.TopCentre
                 },
-                tail = new DrawableTailNote(this, action)
+                tail = new DrawableTailNote(this, action, socket)
                 {
                     Anchor = Anchor.BottomCentre,
                     Origin = Anchor.TopCentre
@@ -117,6 +120,7 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
         protected override void Update()
         {
             base.Update();
+            
 
             // Make the body piece not lie under the head note
             bodyPiece.Y = head.Height;
@@ -169,8 +173,8 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
         {
             private readonly DrawableHoldNote holdNote;
 
-            public DrawableHeadNote(DrawableHoldNote holdNote, ManiaAction action)
-                : base(holdNote.HitObject.Head, action)
+            public DrawableHeadNote(DrawableHoldNote holdNote, ManiaAction action, SocketCommunication socket)
+                : base(holdNote.HitObject.Head, action, socket)
             {
                 this.holdNote = holdNote;
 
@@ -207,12 +211,12 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
         private class DrawableTailNote : DrawableNote
         {
             private readonly DrawableHoldNote holdNote;
-
-            public DrawableTailNote(DrawableHoldNote holdNote, ManiaAction action)
-                : base(holdNote.HitObject.Tail, action)
+            private SocketCommunication socket;
+            public DrawableTailNote(DrawableHoldNote holdNote, ManiaAction action, SocketCommunication socket)
+                : base(holdNote.HitObject.Tail, action, socket)
             {
                 this.holdNote = holdNote;
-
+                this.socket = socket;
                 RelativePositionAxes = Axes.None;
                 Y = 0;
 
@@ -225,6 +229,14 @@ namespace osu.Game.Rulesets.Mania.Objects.Drawables
 
             protected override void CheckForJudgements(bool userTriggered, double timeOffset)
             {
+                if (timeOffset > -150 && timeOffset < 100)
+                {
+                    if (socket != null)
+                    {
+                        var maniaHit = (ManiaHitObject)HitObject;
+                        socket.send(EventBuilder.createNoteUpdateEvent(maniaHit.Column, 10, (float)timeOffset).ToString());
+                    }
+                }
                 if (!userTriggered)
                 {
                     if (timeOffset > HitObject.HitWindows.Bad / 2)

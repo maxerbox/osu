@@ -56,7 +56,7 @@ namespace osu.Game.Rulesets.Mania.Tests
 
                 int col = rng.Next(0, 4);
 
-                var note = new DrawableNote(new Note { Column = col }, ManiaAction.Key1)
+                var note = new DrawableNote(new Note { Column = col }, ManiaAction.Key1, null)
                 {
                     AccentColour = playfield.Columns.ElementAt(col).AccentColour
                 };
@@ -127,7 +127,7 @@ namespace osu.Game.Rulesets.Mania.Tests
                 {
                     StartTime = t,
                     Column = 0
-                }, ManiaAction.Key1));
+                }, ManiaAction.Key1, null));
 
                 if (gravity)
                     playfield.Columns.ElementAt(3).Add(createTimingChange(t, true));
@@ -136,7 +136,7 @@ namespace osu.Game.Rulesets.Mania.Tests
                 {
                     StartTime = t,
                     Column = 3
-                }, ManiaAction.Key4));
+                }, ManiaAction.Key4, null));
             }
 
             if (gravity)
@@ -147,7 +147,7 @@ namespace osu.Game.Rulesets.Mania.Tests
                 StartTime = start_time,
                 Duration = duration,
                 Column = 1
-            }, ManiaAction.Key2));
+            }, ManiaAction.Key2, null));
 
             if (gravity)
                 playfield.Columns.ElementAt(2).Add(createTimingChange(start_time, true));
@@ -157,7 +157,7 @@ namespace osu.Game.Rulesets.Mania.Tests
                 StartTime = start_time,
                 Duration = duration,
                 Column = 2
-            }, ManiaAction.Key3));
+            }, ManiaAction.Key3, null));
         }
     }
 }

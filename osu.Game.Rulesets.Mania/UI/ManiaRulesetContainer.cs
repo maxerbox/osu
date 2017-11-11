@@ -19,6 +19,7 @@ using osu.Game.Rulesets.Mania.Objects.Drawables;
 using osu.Game.Rulesets.Mania.Replays;
 using osu.Game.Rulesets.Mania.Scoring;
 using osu.Game.Rulesets.Mania.Timing;
+using osu.Game.Rulesets.Mania.Communication;
 using osu.Game.Rulesets.Objects.Drawables;
 using osu.Game.Rulesets.Objects.Types;
 using osu.Game.Rulesets.Replays;
@@ -35,8 +36,9 @@ namespace osu.Game.Rulesets.Mania.UI
         /// the beatmap converter will attempt to convert beatmaps to use.
         /// </summary>
         public int AvailableColumns { get; private set; }
-
+        private bool hasCompleted;
         public IEnumerable<DrawableBarLine> BarLines;
+        public SocketCommunication socket = new SocketCommunication();
 
         public ManiaRulesetContainer(Ruleset ruleset, WorkingBeatmap beatmap, bool isForCurrentRuleset)
             : base(ruleset, beatmap, isForCurrentRuleset)
@@ -74,12 +76,48 @@ namespace osu.Game.Rulesets.Mania.UI
         {
             BarLines.ForEach(Playfield.Add);
         }
-
-        protected sealed override Playfield CreatePlayfield() => new ManiaPlayfield(AvailableColumns)
+        public override void OnFail()
         {
-            Anchor = Anchor.Centre,
-            Origin = Anchor.Centre,
-        };
+            base.OnFail();
+            var Event = EventBuilder.createStopEvent(true);
+            socket.send(Event.ToString());
+            socket.Close();
+
+        }
+        public override void OnCompletion()
+        {
+            base.OnCompletion();
+            hasCompleted = true;
+            var Event = EventBuilder.createStopEvent(false, true);
+            socket.send(Event.ToString());
+            socket.Close();
+
+        }
+        public override void onAbortLoading()
+        {
+            base.onAbortLoading();
+            var Event = EventBuilder.createStopEvent();
+            socket.send(Event.ToString());
+            socket.Close();
+
+        }
+        public override void OnExit(bool hasFailed)
+        {
+            if (!hasFailed && !hasCompleted)
+            {
+                var Event = EventBuilder.createStopEvent();
+                socket.send(Event.ToString());
+                socket.Close();
+            }
+        }
+        protected sealed override Playfield CreatePlayfield() {
+            socket.send(EventBuilder.createStartEvent(AvailableColumns).ToString());
+            return new ManiaPlayfield(AvailableColumns)
+            {
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+            };
+        }
 
         public override ScoreProcessor CreateScoreProcessor() => new ManiaScoreProcessor(this);
 
@@ -107,19 +145,24 @@ namespace osu.Game.Rulesets.Mania.UI
 
         protected override DrawableHitObject<ManiaHitObject> GetVisualRepresentation(ManiaHitObject h)
         {
-            ManiaAction action = Playfield.Columns.ElementAt(h.Column).Action;
+            
+            var column = h.Column;
+            if (!socket.Columns.ContainsKey(column))
+                socket.Columns.Add(column, new SocketCommunication.ColumnHitObject());
+            socket.Columns[column].HitObjects.Add(h);
 
+            ManiaAction action = Playfield.Columns.ElementAt(h.Column).Action;
             var holdNote = h as HoldNote;
             if (holdNote != null)
-                return new DrawableHoldNote(holdNote, action);
+                return new DrawableHoldNote(holdNote, action, socket);
 
             var note = h as Note;
             if (note != null)
-                return new DrawableNote(note, action);
+                return new DrawableNote(note, action, socket);
+            
 
             return null;
         }
-
         protected override Vector2 GetPlayfieldAspectAdjust() => new Vector2(1, 0.8f);
 
         protected override SpeedAdjustmentContainer CreateSpeedAdjustmentContainer(MultiplierControlPoint controlPoint) => new ManiaSpeedAdjustmentContainer(controlPoint, ScrollingAlgorithm.Basic);

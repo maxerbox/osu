@@ -43,14 +43,14 @@ namespace osu.Game.Rulesets.Mania.Tests
                                 RelativeChildSize = new Vector2(1, 10000),
                                 Children = new[]
                                 {
-                                    new DrawableNote(new Note(), ManiaAction.Key1)
+                                    new DrawableNote(new Note(), ManiaAction.Key1, null)
                                     {
                                         Y = 5000,
                                         LifetimeStart = double.MinValue,
                                         LifetimeEnd = double.MaxValue,
                                         AccentColour = Color4.Red
                                     },
-                                    new DrawableNote(new Note(), ManiaAction.Key1)
+                                    new DrawableNote(new Note(), ManiaAction.Key1, null)
                                     {
                                         Y = 6000,
                                         LifetimeStart = double.MinValue,
@@ -77,7 +77,7 @@ namespace osu.Game.Rulesets.Mania.Tests
                                 RelativeChildSize = new Vector2(1, 10000),
                                 Children = new[]
                                 {
-                                    new DrawableHoldNote(new HoldNote(), ManiaAction.Key1)
+                                    new DrawableHoldNote(new HoldNote(), ManiaAction.Key1, null)
                                     {
                                         Y = 5000,
                                         Height = 1000,

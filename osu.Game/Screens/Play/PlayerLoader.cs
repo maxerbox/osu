@@ -136,6 +136,10 @@ namespace osu.Game.Screens.Play
             Content.ScaleTo(0.7f, 150, Easing.InQuint);
             this.FadeOut(150);
 
+            //trigger abort load to prevent from Connection Resets with socket
+            if (player.LoadState != LoadState.Loaded)
+                this.player.AbortLoad();
+
             return base.OnExiting(next);
         }
 

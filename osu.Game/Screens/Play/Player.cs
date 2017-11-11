@@ -128,7 +128,6 @@ namespace osu.Game.Screens.Play
                 Exit();
                 return;
             }
-
             adjustableSourceClock = (IAdjustableClock)working.Track ?? new StopwatchClock();
             decoupledClock = new DecoupleableInterpolatingFramedClock { IsCoupled = false };
 
@@ -252,6 +251,14 @@ namespace osu.Game.Screens.Play
             RestartRequested?.Invoke();
             Exit();
         }
+        public void AbortLoad()
+        {
+            if (loadedSuccessfully)
+            {
+                //trigger Completion RuleSetcontainer event
+                RulesetContainer.onAbortLoading();
+            }
+        }
 
         private ScheduledDelegate onCompletionEvent;
 
@@ -260,6 +267,9 @@ namespace osu.Game.Screens.Play
             // Only show the completion screen if the player hasn't failed
             if (scoreProcessor.HasFailed || onCompletionEvent != null)
                 return;
+
+            //trigger Completion RuleSetcontainer event
+            RulesetContainer.OnCompletion();
 
             ValidForResume = false;
 
@@ -288,6 +298,10 @@ namespace osu.Game.Screens.Play
 
             HasFailed = true;
             failOverlay.Retries = RestartCount;
+
+            //trigger Fail RuleSetcontainer event
+            RulesetContainer.OnFail();
+
             failOverlay.Show();
             return true;
         }
@@ -330,12 +344,13 @@ namespace osu.Game.Screens.Play
 
         protected override bool OnExiting(Screen next)
         {
+            //trigger rulesetcontainer event OnExit with HasFailed
             if (HasFailed || !ValidForResume || pauseContainer?.AllowExit != false || RulesetContainer?.HasReplayLoaded != false)
             {
                 fadeOut();
                 return base.OnExiting(next);
             }
-
+            RulesetContainer.OnExit(HasFailed);
             if (loadedSuccessfully)
             {
                 pauseContainer.Pause();

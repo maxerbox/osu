@@ -66,6 +66,12 @@ namespace osu.Game.Rulesets.UI
             Ruleset = ruleset;
         }
 
+        public virtual void OnRestart() { }
+        public virtual void OnExit(bool hasFailed) { }
+        public virtual void OnFail() { }
+        public virtual void OnCompletion() { }
+        public virtual void onAbortLoading() { }
+
         public abstract ScoreProcessor CreateScoreProcessor();
 
         /// <summary>
